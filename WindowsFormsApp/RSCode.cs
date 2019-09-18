@@ -9,48 +9,47 @@ namespace RSCode
 {
     internal class RSCoder
     {
-        public static bool debug = false;
-
         /// <summary>
-        /// RS code over GF(2**mm)
+        /// Код Рида-Соломона над GF(2**mm)
         /// </summary>
-        private readonly int mm = 8;
-
+        private const int mm = 4;
         /// <summary>
-        /// nn=2**mm -1   length of codeword
+        /// Длина кодового слова
         /// </summary>
-        private int nn = (int) Math.Pow(2, 8) - 1;
-
+        private int nn = (int)Math.Pow(2, mm) - 1;
         /// <summary>
-        /// number of errors that can be corrected
+        /// Количество корректируемых ошибок
         /// </summary>
-        private readonly int tt = 4;
-
+        private readonly int tt;
         /// <summary>
+        /// Длина информационной части кодового слова
         /// kk = nn-2*tt
         /// </summary>
-        private int kk;
-
+        private readonly int kk;
         /// <summary>
-        /// generator polynomial
+        /// Порождающий многочлен
         /// </summary>
         private readonly int[] pp;
+        /// <summary>
+        /// Таблица степеней примитивного члена
+        /// </summary>
         private readonly int[] alpha_to;
         private readonly int[] gg;
-        private int[] index_of;
-
         /// <summary>
-        /// received data
+        /// Индексная таблица для быстрого умножения
+        /// </summary>
+        private int[] index_of;
+        /// <summary>
+        /// Полученные данные
         /// </summary>
         private int[] recd;
         private int[] data, bb;
 
-        public RSCoder(int t = 4)
+        public RSCoder(int t = 3)
         {
             tt = t;
             kk = nn - 2 * tt;
-            pp = new int[] { 1, 0, 1, 1, 1, 0, 0, 0, 1 };
-
+            pp = new int[] { 1, 1, 0, 0, 1 };
             alpha_to = new int[nn + 1];
             index_of = new int[nn + 1];
             gg = new int[nn - kk + 1];
@@ -64,10 +63,15 @@ namespace RSCode
         }
 
         /// <summary>
-        /// generate GF(2**mm) from the irreducible polynomial p(X) in pp[0]..pp[mm]
-        /// lookup tables:  index->polynomial form   alpha_to[] contains j=alpha**i;
-        ///            polynomial form -> index form  index_of[j=alpha**i] = i
-        /// alpha=2 is the primitive element of GF(2**mm)
+        ///генерируем look-up таблицу для быстрого умножения для GF(2^m) на основе
+        /// несократимого порождающего полинома P от pp[0] до pp[m].
+        ///
+        /// look-up таблица:
+        ///               index->polynomial из alpha_to[] содержит j=alpha^i,
+        ///               где alpha есть примитивный член, обычно равный 2
+        ///               а ^ - операция возведения в степень (не XOR!);
+        ///              
+        ///               polynomial form -> index из index_of[j=alpha^i] = i;
         /// </summary>
         private void Generate_gf()
         {
@@ -270,10 +274,6 @@ namespace RSCode
             // коррекция ошибок
             if (syn_error != 0) // если есть ошибки, пытаемся их скорректировать
             {
-                if (debug)
-                {
-                    Console.WriteLine("There are errors");
-                }
                 // вычисление полинома локатора лямбда
                 /* вычисляем полином локатора ошибки через итеративный алгоритм Берлекэмпа. Следуя терминологии
                  * Lin and Costello (см. "Error Control Coding: Fundamentals and Applications" Prentice Hall 1983
@@ -522,10 +522,6 @@ namespace RSCode
                                 recd[i] = 0;     // выводим информационное слово как есть
                             }
                         }
-                        if (debug)
-                        {
-                            Console.WriteLine("Can not solve 1");
-                        }
                     }
                 }
                 else
@@ -541,10 +537,6 @@ namespace RSCode
                         {
                             recd[i] = 0;     // выводим информационное слово как есть
                         }
-                    }
-                    if (debug)
-                    {
-                        Console.WriteLine("Can not solve 2");
                     }
                 }
             }
@@ -563,8 +555,53 @@ namespace RSCode
                 }
             }
         }
+        /// <summary>
+        /// Преобразование в блоки по m бит из байтов
+        /// </summary>
+        /// <param name="data">Исходные данные</param>
+        /// <param name="m">Количество бит в блоке</param>
+        /// <returns></returns>
+        public static byte[] ToHex(byte[] data, int m = 4)
+        {
+            byte[] input = new byte[(int)Math.Ceiling(data.Length * 8.0 / m)];
 
-        public static byte[] Encode(byte[] data, int t = 4)
+            for (int i = 1, curr = data[0], j = 1; i < input.Length + 1; ++i)
+            {
+                if ((j * 8 < i * m) && (j < data.Length))
+                {
+                    ++j;
+                    curr = (curr << 8) + data[j - 1];
+                }
+
+                input[i - 1] = (byte)(curr >> (j * 8 - i * m));
+                curr -= input[i - 1] << (j * 8 - i * m);
+            }
+            return input;
+        }
+        /// <summary>
+        /// Преобразование в байты из блоков по m бит
+        /// </summary>
+        /// <param name="data">Данные в m-битном коде</param>
+        /// <param name="m">Количество бит в блоке</param>
+        /// <returns></returns>
+        public static byte[] ToByte(byte[] data, int m = 4)
+        {
+            byte[] decoded = new byte[(int)Math.Ceiling(data.Length * m / 8.0)];
+
+            for (int i = 1, curr = 0, j = 1; i < data.Length + 1; ++i)
+            {
+                curr = (curr << m) + data[i - 1];
+                if ((j * 8 <= i * m) && (j < decoded.Length + 1))
+                {
+                    decoded[j - 1] = (byte)(curr >> (i * m - j * 8));
+                    curr -= decoded[j - 1] << (i * m - j * 8);
+                    ++j;
+                }
+            }
+            return decoded;
+        }
+
+        public static byte[] Encode(byte[] data, int t = 3)
         {
             if (t < 1 || t > 5)
             {
@@ -572,12 +609,12 @@ namespace RSCode
             }
 
             RSCoder coder = new RSCoder(t);
-
+            /*
             byte[] dataWithLen = new byte[data.Length + sizeof(int)];
             int size = data.Length;
             for (int i = 0; i < sizeof(int); ++i)
             {
-                dataWithLen[i] = (byte) (size % 256);
+                dataWithLen[i] = (byte)(size % 256);
                 size /= 256;
             }
             for (int i = 0; i < data.Length; ++i)
@@ -585,116 +622,66 @@ namespace RSCode
                 dataWithLen[i + sizeof(int)] = data[i];
             }
 
-            byte[] input = dataWithLen;
+            byte[] input = ToHex(dataWithLen, mm);
+            */
+            byte[] input = ToHex(data, mm);
 
-            int blocksCnt = (int) Math.Ceiling(input.Length / (double) coder.kk);
+            int blocksCnt = (int)Math.Ceiling(input.Length / (double)coder.kk);
             byte[] output = new byte[blocksCnt * coder.nn];
             for (int i = 0; i < blocksCnt; ++i)
             {
-                if (debug)
-                {
-                    Console.WriteLine("INPUT[{0:D}]", i);
-                }
-
                 for (int j = 0; j < coder.kk; ++j)
                 {
                     coder.data[j] = (input.Length > j + i * coder.kk) ? input[j + i * coder.kk] : 0;
-                    if (debug)
-                    {
-                        Console.Write("{0:D} ", coder.data[j]);
-                    }
                 }
-                if (debug)
-                {
-                    Console.WriteLine();
-                }
-
                 coder.Encode_rs();
-
-                if (debug)
-                {
-                    Console.WriteLine("OUTPUT[{0:D}]", i);
-                }
 
                 for (int j = 0; j < coder.nn - coder.kk; ++j)
                 {
-                    output[j + i * coder.nn] = (byte) coder.bb[j];
-                    if (debug)
-                    {
-                        Console.Write("{0:D} ", output[j + i * coder.nn]);
-                    }
+                    output[j + i * coder.nn] = (byte)coder.bb[j];
                 }
 
                 for (int j = 0; j < coder.kk; ++j)
                 {
-                    output[j + i * coder.nn + coder.nn - coder.kk] = (byte) coder.data[j];
-                    if (debug)
-                    {
-                        Console.Write("{0:D} ", output[j + i * coder.nn + coder.nn - coder.kk]);
-                    }
-                }
-                if (debug)
-                {
-                    Console.WriteLine();
+                    output[j + i * coder.nn + coder.nn - coder.kk] = (byte)coder.data[j];
                 }
             }
-            return output;
+            return ToByte(output, mm);
         }
 
-        public static byte[] Decode(byte[] data, int t = 4)
+        public static byte[] Decode(byte[] data, int t = 3)
         {
             if (t < 1 || t > 5)
             {
                 throw new ArgumentOutOfRangeException();
             }
+            if (data == null)
+            {
+                return data;
+            }
 
             RSCoder coder = new RSCoder(t);
 
-            byte[] input = data;
+            byte[] input = ToHex(data, mm);
 
-            int blocksCnt = (int) Math.Ceiling(input.Length / (double) coder.nn);
+            int blocksCnt = (int)Math.Ceiling(input.Length / (double)coder.nn);
             byte[] output = new byte[blocksCnt * coder.kk];
             for (int i = 0; i < blocksCnt; ++i)
             {
-                if (debug)
-                {
-                    Console.WriteLine("INPUT[{0:D}]", i);
-                }
-
                 for (int j = 0; j < coder.nn; ++j)
                 {
                     coder.recd[j] = (input.Length > j + i * coder.nn) ? coder.index_of[input[j + i * coder.nn]] : 0;
-                    if (debug)
-                    {
-                        Console.Write("{0:D} ", coder.recd[j]);
-                    }
                 }
-                if (debug)
-                {
-                    Console.WriteLine();
-                }
-
                 coder.Decode_rs();
-
-                if (debug)
-                {
-                    Console.WriteLine("OUTPUT[{0:D}]", i);
-                }
 
                 for (int j = 0; j < coder.kk; ++j)
                 {
-                    output[j + i * coder.kk] = (byte) (coder.recd[j + coder.nn - coder.kk]);
-                    if (debug)
-                    {
-                        Console.Write("{0:D} ", output[j + i * coder.kk]);
-                    }
-                }
-                if (debug)
-                {
-                    Console.WriteLine();
+                    output[j + i * coder.kk] = (byte)(coder.recd[j + coder.nn - coder.kk]);
                 }
             }
 
+            output = ToByte(output, mm);
+            /*
             int size = 0;
             for (int i = sizeof(int) - 1; i >= 0; --i)
             {
@@ -712,142 +699,23 @@ namespace RSCode
             {
                 decoded[i] = output[i + sizeof(int)];
             }
+            */
+            byte[] decoded = null;
+            for (int x = 0; x < output.Length; x++)
+            {
+                if (output[output.Length - x - 1] != 0)
+                {
+                    decoded = new byte[output.Length - x];
+                    break;
+                }
+            }
+
+            for (int i = 0; i < decoded.Length; ++i)
+            {
+                decoded[i] = output[i];
+            }
 
             return decoded;
-            //return output;
-        }
-
-        private static void WriteBits(BitArray bits, int sep = 8)
-        {
-            int i = 0;
-            foreach (bool b in bits)
-            {
-                Console.Write(b ? 1 : 0);
-                if (++i % sep == 0)
-                {
-                    Console.Write(" ");
-                }
-                if (i % 40 == 0)
-                {
-                    Console.WriteLine();
-                }
-            }
-            Console.WriteLine();
-        }
-
-        public static void Test()
-        {
-            Random rnd = new Random();
-            for (int i = 0; i < 100; ++i)
-            {
-                byte[] data = new byte[rnd.Next(1, 4097)];
-                for (int j = 0; j < data.Length; ++j)
-                {
-                    data[j] = (byte) (rnd.Next(256));
-                }
-
-                byte[] decoded = null;
-                try
-                {
-                    decoded = Decode(Encode(data, 4), 4);
-                }
-                catch (Exception)
-                {
-                    Console.Write("data = {");
-                    for (int j = 0; j < data.Length; ++j)
-                    {
-                        Console.Write("{0:D}, ", data[j]);
-                    }
-                    Console.WriteLine("};");
-                    break;
-                }
-
-                Console.WriteLine("I: {0:D}, Length: {1:D}", i, data.Length);
-
-                if (decoded.Length != data.Length)
-                {
-                    Console.WriteLine("Размеры не совпали! data.Len = {0:D} decoded.Len = {1:D}", data.Length, decoded.Length);
-                    break;
-                }
-                else
-                {
-                    bool error = false;
-                    for (int j = 0; j < data.Length; ++j)
-                    {
-                        if (data[j] != decoded[j])
-                        {
-                            Console.WriteLine("Несовпадение в позиции {0:D} ({1:D} != {2:D})", j, data[j], decoded[j]);
-                            error = true;
-                        }
-                    }
-                    if (error)
-                    {
-                        Console.Write("data = {");
-                        for (int j = 0; j < data.Length; ++j)
-                        {
-                            Console.Write("{0:D}, ", data[j]);
-                        }
-                        Console.WriteLine("};");
-                        break;
-                    }
-                }
-                rnd.Next();
-            }
-        }
-
-        public static void _Main()
-        {
-            //Test();
-            /*
-            byte[] data = { 64, 21 };
-            byte[] encoded = encode(data);
-            byte[] decoded = decode(encoded);
-
-            Console.Write("data: ");
-            for (int j = 0; j < data.Length; ++j) {
-                Console.Write("{0:D}, ", data[j]);
-            }
-            Console.WriteLine();
-
-            Console.Write("encoded: ");
-            for (int j = 0; j < encoded.Length; ++j) {
-                Console.Write("{0:D}, ", encoded[j]);
-            }
-            Console.WriteLine();
-            
-            Console.Write("decoded: ");
-            for (int j = 0; j < decoded.Length; ++j) {
-                Console.Write("{0:D}, ", decoded[j]);
-            }
-            Console.WriteLine();
-            */
-            byte[] data = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-            foreach (var el in data)
-            {
-                for (byte m = 0b10000000; m > 0; m >>= 1)
-                {
-                    Console.Write((el & m) == 0 ? 0 : 1);
-                }
-                Console.WriteLine();
-            }
-            Console.WriteLine();
-            byte[] encoded = RSCoder.Encode(data, 4);
-            int i = 0;
-            foreach (var el in encoded)
-            {
-                for (byte m = 0b10000000; m > 0; m >>= 1)
-                {
-                    Console.Write((el & m) == 0 ? 0 : 1);
-                }
-                if (i++ % (encoded.Length / data.Length) == 0)
-                {
-                    Console.WriteLine();
-                }
-                else
-                {
-                    Console.Write(' ');
-                }
-            }
         }
     }
 }

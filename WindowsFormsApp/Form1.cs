@@ -8,6 +8,7 @@ using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -15,14 +16,22 @@ namespace WindowsFormsApp
 {
     public partial class Form1 : Form
     {
+        private const int ping = 250;
+        private List<byte> recd = new List<byte>();
+
         public Form1()
         {
             InitializeComponent();
-            serialPort1 = new SerialPort();
+            listBox1.Items.AddRange(SerialPort.GetPortNames());
             toolTip.SetToolTip(SelectedFileTextBox, "Путь до выбранного файла");
-            toolTip.SetToolTip(PasteRichTextBox, "Текст для передачи");
+            toolTip.SetToolTip(SendRichTextBox, "Текст для передачи");
             toolTip.SetToolTip(TakeRichTextBox, "Принятый текст");
             toolTip.AutomaticDelay = 100;
+        }
+
+        private void SerialPort1_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        {
+            recd.Add((byte)serialPort1.ReadByte());
         }
 
         public byte[] Encrypt(byte[] data, string key)
@@ -33,7 +42,7 @@ namespace WindowsFormsApp
             rnd.NextBytes(item);
             for (int i = 0; i < data.Length; i++)
             {
-                res[i] = (byte) (data[i] ^ item[i]);
+                res[i] = (byte)(data[i] ^ item[i]);
             }
 
             return res;
@@ -41,26 +50,76 @@ namespace WindowsFormsApp
 
         public byte[] Decrypt(byte[] data, string key)
         {
+            if (data == null)
+            {
+                return null;
+            }
+
             Random rnd = new Random(key.GetHashCode());
             byte[] res = new byte[data.Length];
             byte[] item = new byte[data.Length];
             rnd.NextBytes(item);
             for (int i = 0; i < data.Length; i++)
             {
-                res[i] = (byte) (data[i] ^ item[i]);
+                res[i] = (byte)(data[i] ^ item[i]);
             }
 
             return res;
         }
 
-        public void Share(byte[] data)
+        public void Send(byte[] data)
+        {
+            if (!serialPort1.IsOpen)
+            {
+                MessageBox.Show("Выберите порт");
+                return;
+            }
+            byte[] sharing = Encrypt(data, KeyTextBox.Text);
+            sharing = RSCoder.Encode(sharing);
+            File.WriteAllBytes(@"..\..\..\shared.bin", sharing);
+            /*for (int i = 0; i < sharing.Length; i += 15)
+            {
+                serialPort1.Write(sharing, i, Math.Min(15, sharing.Length - i));
+                Thread.Sleep(16 * ping);
+            }*/
+            serialPort1.Write(sharing, 0, sharing.Length);
+        }
+
+        public void FILESend(byte[] data)
         {
             byte[] sharing = Encrypt(data, KeyTextBox.Text);
             sharing = RSCoder.Encode(sharing);
-            sharing = Spoiling(sharing);
-            File.WriteAllBytes(@"..\..\..\Buffer.bin", sharing);
+            File.WriteAllBytes(@"..\..\..\Buffer.bin", Spoiling(sharing));
         }
-        public byte[] Receive()
+
+        public byte[] Take()
+        {
+            if (!serialPort1.IsOpen)
+            {
+                MessageBox.Show("Выберите порт");
+                return null;
+            }
+            /*if (!File.Exists(@"..\..\..\Buffer.bin"))
+            {
+                return null;
+            }
+
+            byte[] data = File.ReadAllBytes(@"..\..\..\Buffer.bin");*/
+            byte[] data = new byte[recd.Count];
+            for (int i = 0; i < data.Length; i++)
+            {
+                data[i] = recd[i];
+            }
+
+            recd.Clear();
+            File.WriteAllBytes(@"..\..\..\taken.bin", data);
+            //data = Mix(data);
+            data = RSCoder.Decode(data);
+            data = Decrypt(data, KeyTextBox.Text);
+            return data;
+        }
+
+        public byte[] FILETake()
         {
             if (!File.Exists(@"..\..\..\Buffer.bin"))
             {
@@ -72,6 +131,7 @@ namespace WindowsFormsApp
             data = Decrypt(data, KeyTextBox.Text);
             return data;
         }
+
         public byte[] Spoiling(byte[] data)
         {
             Random rnd = new Random();
@@ -85,98 +145,129 @@ namespace WindowsFormsApp
                     spoiler = rnd.Next(256);
                     spoiled++;
                 }
-                res[i] = (byte) (data[i] ^ spoiler);
+                res[i] = (byte)(data[i] ^ spoiler);
             }
             return res;
         }
 
-        private void PasteRichTextBox_TextChanged(object sender, EventArgs e)
+        private static byte[] Mix(byte[] data)
         {
-            byte[] data = new byte[PasteRichTextBox.Text.Length];
+            byte[] res = new byte[(int)Math.Ceiling(data.Length / 8.0) * 8];
+            for (int i = 0; i < res.Length / 8; i++)
+            {
+                for (int j = 0; j < 8; j++)
+                {
+                    for (int k = 0; k < 8; k++)
+                    {
+                        if (8 * i + k < data.Length)
+                        {
+                            int b = (1 << j) & data[8 * i + k];
+                            if (b != 0)
+                            {
+                                b /= b;
+                            }
+
+                            res[8 * i + j] += (byte)(b << k);
+                        }
+                    }
+                }
+
+            }
+            return res;
+        }
+
+        private void SendRichTextBox_TextChanged(object sender, EventArgs e)
+        {
+            byte[] data = new byte[SendRichTextBox.Text.Length];
             for (int i = 0; i < data.Length; i++)
             {
-                data[i] = (byte) PasteRichTextBox.Text[i];
+                data[i] = (byte)SendRichTextBox.Text[i];
             }
 
             data = Encrypt(data, KeyTextBox.Text);
             char[] res = new char[data.Length];
             for (int i = 0; i < data.Length; i++)
             {
-                res[i] = (char) data[i];
+                res[i] = (char)data[i];
             }
-            //TakeRichTextBox.Text += new string(Array.ConvertAll<byte, char>(data, x => (char) x));
         }
 
-        private void ShareButton_Click(object sender, EventArgs e)
+        private void SendButton_Click(object sender, EventArgs e)
         {
-            if (PasteFileRadioButton.Checked)
+            byte[] data = null;
+            if (SendFileRadioButton.Checked)
             {
-                if(!File.Exists(openFileDialog1.FileName))
+                if (!File.Exists(SelectedFileTextBox.Text))
                 {
                     MessageBox.Show("Выберите файл");
+                    SelectedFileTextBox.Text = "";
                     return;
                 }
-                byte[] data = File.ReadAllBytes(openFileDialog1.FileName);
-                Share(data);
+                data = File.ReadAllBytes(SelectedFileTextBox.Text);
             }
-            else if (PasteRadioButton.Checked)
+            else if (SendRadioButton.Checked)
             {
-                byte[] data = new byte[PasteRichTextBox.Text.Length];
+                data = new byte[SendRichTextBox.Text.Length];
                 for (int i = 0; i < data.Length; i++)
                 {
-                    data[i] = (byte) PasteRichTextBox.Text[i];
+                    data[i] = (byte)SendRichTextBox.Text[i];
                 }
-                Share(data);
             }
+            Send(data);
+            //FILESend(data);
         }
 
         private void TakeFileRadioButton_CheckedChanged(object sender, EventArgs e)
         {
             if (TakeFileRadioButton.Checked)
             {
-                ShareButton.Hide();
-                TakeButton.Show();
+                SendButton.Hide();
+                TakeButton.Hide();
                 SelectFileButton.Show();
                 SelectedFileTextBox.Show();
             }
+            SelectedFileTextBox.Clear();
         }
 
         private void TakeRadioButton_CheckedChanged(object sender, EventArgs e)
         {
             if (TakeRadioButton.Checked)
             {
-                ShareButton.Hide();
+                SendButton.Hide();
                 TakeButton.Show();
                 SelectFileButton.Hide();
                 SelectedFileTextBox.Hide();
             }
+            SelectedFileTextBox.Clear();
         }
 
-        private void PasteFileRadioButton_CheckedChanged(object sender, EventArgs e)
+        private void SendFileRadioButton_CheckedChanged(object sender, EventArgs e)
         {
-            if (PasteFileRadioButton.Checked)
+            if (SendFileRadioButton.Checked)
             {
-                ShareButton.Show();
+                SendButton.Show();
                 TakeButton.Hide();
                 SelectFileButton.Show();
                 SelectedFileTextBox.Show();
             }
+            SelectedFileTextBox.Clear();
         }
 
-        private void PasteRadioButton_CheckedChanged(object sender, EventArgs e)
+        private void SendRadioButton_CheckedChanged(object sender, EventArgs e)
         {
-            if (PasteRadioButton.Checked)
+            if (SendRadioButton.Checked)
             {
-                ShareButton.Show();
+                SendButton.Show();
                 TakeButton.Hide();
                 SelectFileButton.Hide();
                 SelectedFileTextBox.Hide();
             }
+            SelectedFileTextBox.Clear();
         }
 
         private void SelectFileButton_Click(object sender, EventArgs e)
         {
-            if (PasteFileRadioButton.Checked)
+            if (SendFileRadioButton.Checked)
             {
                 if (openFileDialog1.ShowDialog() == DialogResult.OK)
                 {
@@ -200,19 +291,25 @@ namespace WindowsFormsApp
 
         private void TakeButton_Click(object sender, EventArgs e)
         {
-            byte[] data = Receive();
+            byte[] data = Take();
+            //byte[] data = FILETake();
+            if (data == null)
+            {
+                return;
+            }
+
             if (TakeFileRadioButton.Checked)
             {
-                if(!File.Exists(saveFileDialog1.FileName))
+                if (SelectedFileTextBox.Text == "")
                 {
                     MessageBox.Show("Выберите файл");
                     return;
                 }
-                File.WriteAllBytes(saveFileDialog1.FileName, data);
+                File.WriteAllBytes(SelectedFileTextBox.Text, data);
             }
-            if (TakeRadioButton.Checked)
+            else if (TakeRadioButton.Checked)
             {
-                TakeRichTextBox.Text += new string(Array.ConvertAll<byte, char>(data, x => (char) x));
+                TakeRichTextBox.Text += new string(Array.ConvertAll<byte, char>(data, x => (char)x));
                 TakeRichTextBox.Text += "\n\n";
             }
         }
@@ -236,7 +333,7 @@ namespace WindowsFormsApp
 
         private void Form1_Resize(object sender, EventArgs e)
         {
-            PasteRichTextBox.Width = TakeRichTextBox.Width = (this.Width - 200) / 2;
+            SendRichTextBox.Width = TakeRichTextBox.Width = (this.Width - 200) / 2;
         }
 
         private void SelectedFileTextBox_VisibleChanged(object sender, EventArgs e)
@@ -246,6 +343,41 @@ namespace WindowsFormsApp
                 SelectedFileTextBox.Text = "";
                 openFileDialog1.Reset();
                 saveFileDialog1.Reset();
+            }
+        }
+
+        private void ListBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (serialPort1 != null)
+            {
+                serialPort1.Dispose();
+            }
+            try
+            {
+                serialPort1 = new SerialPort((string)listBox1.SelectedItem, 9600)
+                {
+                    WriteBufferSize = 32,
+                    ReadBufferSize = 32
+                };
+                serialPort1.Open();
+                serialPort1.DataReceived += SerialPort1_DataReceived;
+            }
+            catch (Exception exc)
+            {
+                MessageBox.Show(exc.Message);
+                //listBox1.SetSelected(listBox1.SelectedIndex, false);
+            }
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                serialPort1.Dispose();
+            }
+            catch (Exception exc)
+            {
+                MessageBox.Show(exc.Message);
             }
         }
     }
