@@ -609,7 +609,7 @@ namespace RSCode
             }
 
             RSCoder coder = new RSCoder(t);
-            /*
+            
             byte[] dataWithLen = new byte[data.Length + sizeof(int)];
             int size = data.Length;
             for (int i = 0; i < sizeof(int); ++i)
@@ -623,8 +623,8 @@ namespace RSCode
             }
 
             byte[] input = ToHex(dataWithLen, mm);
-            */
-            byte[] input = ToHex(data, mm);
+            
+            //byte[] input = ToHex(data, mm);
 
             int blocksCnt = (int)Math.Ceiling(input.Length / (double)coder.kk);
             byte[] output = new byte[blocksCnt * coder.nn];
@@ -655,7 +655,7 @@ namespace RSCode
             {
                 throw new ArgumentOutOfRangeException();
             }
-            if (data == null)
+            if (data == null || data.Length == 0)
             {
                 return data;
             }
@@ -681,7 +681,7 @@ namespace RSCode
             }
 
             output = ToByte(output, mm);
-            /*
+            
             int size = 0;
             for (int i = sizeof(int) - 1; i >= 0; --i)
             {
@@ -699,8 +699,8 @@ namespace RSCode
             {
                 decoded[i] = output[i + sizeof(int)];
             }
-            */
-            byte[] decoded = null;
+            
+            /*byte[] decoded = null;
             for (int x = 0; x < output.Length; x++)
             {
                 if (output[output.Length - x - 1] != 0)
@@ -709,12 +709,12 @@ namespace RSCode
                     break;
                 }
             }
-
+            
             for (int i = 0; i < decoded.Length; ++i)
             {
                 decoded[i] = output[i];
             }
-
+            */
             return decoded;
         }
     }

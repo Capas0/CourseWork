@@ -16,7 +16,7 @@ namespace WindowsFormsApp
 {
     public partial class Form1 : Form
     {
-        private const int ping = 250;
+        private const int ping = 125;
         private List<byte> recd = new List<byte>();
 
         public Form1()
@@ -77,21 +77,14 @@ namespace WindowsFormsApp
             byte[] sharing = Encrypt(data, KeyTextBox.Text);
             sharing = RSCoder.Encode(sharing);
             File.WriteAllBytes(@"..\..\..\shared.bin", sharing);
-            /*for (int i = 0; i < sharing.Length; i += 15)
+            for (int i = 0; i < sharing.Length; i += 15)
             {
                 serialPort1.Write(sharing, i, Math.Min(15, sharing.Length - i));
-                Thread.Sleep(16 * ping);
-            }*/
-            serialPort1.Write(sharing, 0, sharing.Length);
+                Thread.Sleep(16 * 8 * ping);
+            }
+            //serialPort1.Write(sharing, 0, sharing.Length);
         }
-
-        public void FILESend(byte[] data)
-        {
-            byte[] sharing = Encrypt(data, KeyTextBox.Text);
-            sharing = RSCoder.Encode(sharing);
-            File.WriteAllBytes(@"..\..\..\Buffer.bin", Spoiling(sharing));
-        }
-
+        
         public byte[] Take()
         {
             if (!serialPort1.IsOpen)
@@ -118,64 +111,7 @@ namespace WindowsFormsApp
             data = Decrypt(data, KeyTextBox.Text);
             return data;
         }
-
-        public byte[] FILETake()
-        {
-            if (!File.Exists(@"..\..\..\Buffer.bin"))
-            {
-                return null;
-            }
-
-            byte[] data = File.ReadAllBytes(@"..\..\..\Buffer.bin");
-            data = RSCoder.Decode(data);
-            data = Decrypt(data, KeyTextBox.Text);
-            return data;
-        }
-
-        public byte[] Spoiling(byte[] data)
-        {
-            Random rnd = new Random();
-            byte[] res = new byte[data.Length];
-            int spoiled = 0;
-            for (int i = 0; i < data.Length; i++)
-            {
-                int spoiler = 0;
-                if (spoiled < 4 && rnd.Next(4) == 0)
-                {
-                    spoiler = rnd.Next(256);
-                    spoiled++;
-                }
-                res[i] = (byte)(data[i] ^ spoiler);
-            }
-            return res;
-        }
-
-        private static byte[] Mix(byte[] data)
-        {
-            byte[] res = new byte[(int)Math.Ceiling(data.Length / 8.0) * 8];
-            for (int i = 0; i < res.Length / 8; i++)
-            {
-                for (int j = 0; j < 8; j++)
-                {
-                    for (int k = 0; k < 8; k++)
-                    {
-                        if (8 * i + k < data.Length)
-                        {
-                            int b = (1 << j) & data[8 * i + k];
-                            if (b != 0)
-                            {
-                                b /= b;
-                            }
-
-                            res[8 * i + j] += (byte)(b << k);
-                        }
-                    }
-                }
-
-            }
-            return res;
-        }
-
+        
         private void SendRichTextBox_TextChanged(object sender, EventArgs e)
         {
             byte[] data = new byte[SendRichTextBox.Text.Length];
