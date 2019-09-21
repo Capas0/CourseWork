@@ -18,11 +18,12 @@ namespace WindowsFormsApp
     {
         private const int ping = 25;
         private List<byte> recd = new List<byte>();
+        private bool updating = false;
 
         public Form1()
         {
             InitializeComponent();
-            listBox1.Items.AddRange(SerialPort.GetPortNames());
+            PortListBox.Items.AddRange(SerialPort.GetPortNames());
             toolTip.SetToolTip(SelectedFileTextBox, "Путь до выбранного файла");
             toolTip.SetToolTip(SendRichTextBox, "Текст для передачи");
             toolTip.SetToolTip(TakeRichTextBox, "Принятый текст");
@@ -82,7 +83,7 @@ namespace WindowsFormsApp
                 Thread.Sleep(16 * 8 * ping);
             }
         }
-        
+
         public byte[] Take()
         {
             if (!serialPort1.IsOpen)
@@ -101,7 +102,7 @@ namespace WindowsFormsApp
             data = Decrypt(data, KeyTextBox.Text);
             return data;
         }
-        
+
         private void SendRichTextBox_TextChanged(object sender, EventArgs e)
         {
             byte[] data = new byte[SendRichTextBox.Text.Length];
@@ -164,8 +165,11 @@ namespace WindowsFormsApp
             else if (TakeRadioButton.Checked)
             {
                 char[] message = new char[data.Length / 2];
-                for(int i = 0; i < message.Length; i++)
+                for (int i = 0; i < message.Length; i++)
+                {
                     message[i] = BitConverter.ToChar(data, 2 * i);
+                }
+
                 TakeRichTextBox.Text += new string(message);
                 TakeRichTextBox.Text += "\n\n";
             }
@@ -274,15 +278,20 @@ namespace WindowsFormsApp
             }
         }
 
-        private void ListBox1_SelectedIndexChanged(object sender, EventArgs e)
+        private void PortListBox_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (updating)
+            {
+                return;
+            }
+
             if (serialPort1 != null)
             {
                 serialPort1.Dispose();
             }
             try
             {
-                serialPort1 = new SerialPort((string)listBox1.SelectedItem, 9600)
+                serialPort1 = new SerialPort((string)PortListBox.SelectedItem, 9600)
                 {
                     WriteBufferSize = 32,
                     ReadBufferSize = 32
@@ -307,6 +316,24 @@ namespace WindowsFormsApp
             {
                 MessageBox.Show(exc.Message);
             }
+        }
+
+        private void PortListBox_MouseEnter(object sender, EventArgs e)
+        {
+            updating = true;
+            string oldPort = (string)PortListBox.SelectedItem;
+            PortListBox.Items.Clear();
+            PortListBox.Items.AddRange(SerialPort.GetPortNames());
+            for (int i = 0; i < PortListBox.Items.Count; i++)
+            {
+                if ((string)PortListBox.Items[i] == oldPort)
+                {
+                    PortListBox.SelectedIndex = i;
+                    break;
+                }
+            }
+
+            updating = false;
         }
     }
 }

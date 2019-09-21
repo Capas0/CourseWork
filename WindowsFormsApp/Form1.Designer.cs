@@ -46,7 +46,7 @@
             this.TakeButton = new System.Windows.Forms.Button();
             this.ClearButton = new System.Windows.Forms.Button();
             this.toolTip = new System.Windows.Forms.ToolTip(this.components);
-            this.listBox1 = new System.Windows.Forms.ListBox();
+            this.PortListBox = new System.Windows.Forms.ListBox();
             this.SuspendLayout();
             // 
             // serialPort1
@@ -209,23 +209,24 @@
             this.ClearButton.Visible = false;
             this.ClearButton.Click += new System.EventHandler(this.ClearButton_Click);
             // 
-            // listBox1
+            // PortListBox
             // 
-            this.listBox1.FormattingEnabled = true;
-            this.listBox1.Location = new System.Drawing.Point(125, 36);
-            this.listBox1.Margin = new System.Windows.Forms.Padding(2);
-            this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(80, 30);
-            this.listBox1.Sorted = true;
-            this.listBox1.TabIndex = 15;
-            this.listBox1.SelectedIndexChanged += new System.EventHandler(this.ListBox1_SelectedIndexChanged);
+            this.PortListBox.FormattingEnabled = true;
+            this.PortListBox.Location = new System.Drawing.Point(125, 36);
+            this.PortListBox.Margin = new System.Windows.Forms.Padding(2);
+            this.PortListBox.Name = "PortListBox";
+            this.PortListBox.Size = new System.Drawing.Size(80, 30);
+            this.PortListBox.Sorted = true;
+            this.PortListBox.TabIndex = 15;
+            this.PortListBox.SelectedIndexChanged += new System.EventHandler(this.PortListBox_SelectedIndexChanged);
+            this.PortListBox.MouseEnter += new System.EventHandler(this.PortListBox_MouseEnter);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(484, 286);
-            this.Controls.Add(this.listBox1);
+            this.Controls.Add(this.PortListBox);
             this.Controls.Add(this.ClearButton);
             this.Controls.Add(this.TakeButton);
             this.Controls.Add(this.SelectFileButton);
@@ -269,7 +270,7 @@
         private System.Windows.Forms.Button TakeButton;
         private System.Windows.Forms.Button ClearButton;
         private System.Windows.Forms.ToolTip toolTip;
-        private System.Windows.Forms.ListBox listBox1;
+        private System.Windows.Forms.ListBox PortListBox;
     }
 }
 
