@@ -133,10 +133,12 @@ namespace WindowsFormsApp
             }
             else if (SendRadioButton.Checked)
             {
-                data = new byte[SendRichTextBox.Text.Length];
-                for (int i = 0; i < data.Length; i++)
+                data = new byte[SendRichTextBox.Text.Length * 2];
+                for (int i = 0; i < SendRichTextBox.Text.Length; i++)
                 {
-                    data[i] = (byte)SendRichTextBox.Text[i];
+                    byte[] symbol = BitConverter.GetBytes(SendRichTextBox.Text[i]);
+                    data[2 * i] = symbol[0];
+                    data[2 * i + 1] = symbol[1];
                 }
             }
             Send(data);
@@ -161,7 +163,10 @@ namespace WindowsFormsApp
             }
             else if (TakeRadioButton.Checked)
             {
-                TakeRichTextBox.Text += new string(Array.ConvertAll<byte, char>(data, x => (char)x));
+                char[] message = new char[data.Length / 2];
+                for(int i = 0; i < message.Length; i++)
+                    message[i] = BitConverter.ToChar(data, 2 * i);
+                TakeRichTextBox.Text += new string(message);
                 TakeRichTextBox.Text += "\n\n";
             }
         }
