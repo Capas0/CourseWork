@@ -1,9 +1,9 @@
 #define trigger 170 // 10101010 - признак начала передачи
-#define ping 125
+#define ping 25
 #define led 12
 #define photoPin A0
 #define flagPin 13
-#define edge 100
+#define edge 50
 
 int u = 0;
 int oldu = 0;
@@ -54,14 +54,13 @@ void loop()
   }
   else
   {
-    do
+    Send(trigger);// передача признака начала передачи
+    for (int i = 0; i < 16 * 5 && now != trigger; i++)
     {
-      Send(trigger);// передача признака начала передачи
-      for (int i = 0; i < 16 * 5 && now != trigger; i++)
-      {
-        Shift5();
-      }
-    } while (now != trigger);
+      Shift5();
+    }
+    if(now != trigger)
+      return;
     digitalWrite(flagPin, LOW);
     for (int i = 0; i < 15; i++) // передача 15 байт
     {

@@ -16,7 +16,7 @@ namespace WindowsFormsApp
 {
     public partial class Form1 : Form
     {
-        private const int ping = 125;
+        private const int ping = 25;
         private List<byte> recd = new List<byte>();
 
         public Form1()
@@ -76,13 +76,11 @@ namespace WindowsFormsApp
             }
             byte[] sharing = Encrypt(data, KeyTextBox.Text);
             sharing = RSCoder.Encode(sharing);
-            File.WriteAllBytes(@"..\..\..\shared.bin", sharing);
             for (int i = 0; i < sharing.Length; i += 15)
             {
                 serialPort1.Write(sharing, i, Math.Min(15, sharing.Length - i));
                 Thread.Sleep(16 * 8 * ping);
             }
-            //serialPort1.Write(sharing, 0, sharing.Length);
         }
         
         public byte[] Take()
@@ -92,12 +90,6 @@ namespace WindowsFormsApp
                 MessageBox.Show("Выберите порт");
                 return null;
             }
-            /*if (!File.Exists(@"..\..\..\Buffer.bin"))
-            {
-                return null;
-            }
-
-            byte[] data = File.ReadAllBytes(@"..\..\..\Buffer.bin");*/
             byte[] data = new byte[recd.Count];
             for (int i = 0; i < data.Length; i++)
             {
@@ -105,8 +97,6 @@ namespace WindowsFormsApp
             }
 
             recd.Clear();
-            File.WriteAllBytes(@"..\..\..\taken.bin", data);
-            //data = Mix(data);
             data = RSCoder.Decode(data);
             data = Decrypt(data, KeyTextBox.Text);
             return data;
@@ -150,7 +140,30 @@ namespace WindowsFormsApp
                 }
             }
             Send(data);
-            //FILESend(data);
+        }
+
+        private void TakeButton_Click(object sender, EventArgs e)
+        {
+            byte[] data = Take();
+            if (data == null)
+            {
+                return;
+            }
+
+            if (TakeFileRadioButton.Checked)
+            {
+                if (SelectedFileTextBox.Text == "")
+                {
+                    MessageBox.Show("Выберите файл");
+                    return;
+                }
+                File.WriteAllBytes(SelectedFileTextBox.Text, data);
+            }
+            else if (TakeRadioButton.Checked)
+            {
+                TakeRichTextBox.Text += new string(Array.ConvertAll<byte, char>(data, x => (char)x));
+                TakeRichTextBox.Text += "\n\n";
+            }
         }
 
         private void TakeFileRadioButton_CheckedChanged(object sender, EventArgs e)
@@ -208,7 +221,6 @@ namespace WindowsFormsApp
                 if (openFileDialog1.ShowDialog() == DialogResult.OK)
                 {
                     SelectedFileTextBox.Text = openFileDialog1.FileName;
-                    //SelectedFileTextBox.Text = Path.GetFileName(openFileDialog1.FileName);
                 }
             }
             else if (TakeFileRadioButton.Checked)
@@ -222,31 +234,6 @@ namespace WindowsFormsApp
                 {
                     TakeButton.Hide();
                 }
-            }
-        }
-
-        private void TakeButton_Click(object sender, EventArgs e)
-        {
-            byte[] data = Take();
-            //byte[] data = FILETake();
-            if (data == null)
-            {
-                return;
-            }
-
-            if (TakeFileRadioButton.Checked)
-            {
-                if (SelectedFileTextBox.Text == "")
-                {
-                    MessageBox.Show("Выберите файл");
-                    return;
-                }
-                File.WriteAllBytes(SelectedFileTextBox.Text, data);
-            }
-            else if (TakeRadioButton.Checked)
-            {
-                TakeRichTextBox.Text += new string(Array.ConvertAll<byte, char>(data, x => (char)x));
-                TakeRichTextBox.Text += "\n\n";
             }
         }
 

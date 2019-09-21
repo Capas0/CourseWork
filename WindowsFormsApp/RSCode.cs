@@ -624,8 +624,6 @@ namespace RSCode
 
             byte[] input = ToHex(dataWithLen, mm);
             
-            //byte[] input = ToHex(data, mm);
-
             int blocksCnt = (int)Math.Ceiling(input.Length / (double)coder.kk);
             byte[] output = new byte[blocksCnt * coder.nn];
             for (int i = 0; i < blocksCnt; ++i)
@@ -700,21 +698,6 @@ namespace RSCode
                 decoded[i] = output[i + sizeof(int)];
             }
             
-            /*byte[] decoded = null;
-            for (int x = 0; x < output.Length; x++)
-            {
-                if (output[output.Length - x - 1] != 0)
-                {
-                    decoded = new byte[output.Length - x];
-                    break;
-                }
-            }
-            
-            for (int i = 0; i < decoded.Length; ++i)
-            {
-                decoded[i] = output[i];
-            }
-            */
             return decoded;
         }
     }
