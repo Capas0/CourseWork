@@ -77,11 +77,8 @@ namespace WindowsFormsApp
             }
             byte[] sharing = Encrypt(data, KeyTextBox.Text);
             sharing = RSCoder.Encode(sharing);
-            for (int i = 0; i < sharing.Length; i += 15)
-            {
-                serialPort1.Write(sharing, i, Math.Min(15, sharing.Length - i));
-                Thread.Sleep(16 * 8 * ping);
-            }
+
+            new ShareForm(serialPort1, sharing, ping).Show();
         }
 
         public byte[] Take()
