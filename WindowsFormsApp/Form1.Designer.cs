@@ -83,7 +83,7 @@
             // 
             // KeyTextBox
             // 
-            this.KeyTextBox.Location = new System.Drawing.Point(8, 148);
+            this.KeyTextBox.Location = new System.Drawing.Point(11, 148);
             this.KeyTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.KeyTextBox.Name = "KeyTextBox";
             this.KeyTextBox.Size = new System.Drawing.Size(95, 20);
@@ -93,7 +93,7 @@
             // SendFileRadioButton
             // 
             this.SendFileRadioButton.AutoSize = true;
-            this.SendFileRadioButton.Location = new System.Drawing.Point(7, 54);
+            this.SendFileRadioButton.Location = new System.Drawing.Point(11, 53);
             this.SendFileRadioButton.Margin = new System.Windows.Forms.Padding(2);
             this.SendFileRadioButton.Name = "SendFileRadioButton";
             this.SendFileRadioButton.Size = new System.Drawing.Size(109, 17);
@@ -105,7 +105,7 @@
             // TakeFileRadioButton
             // 
             this.TakeFileRadioButton.AutoSize = true;
-            this.TakeFileRadioButton.Location = new System.Drawing.Point(7, 75);
+            this.TakeFileRadioButton.Location = new System.Drawing.Point(11, 74);
             this.TakeFileRadioButton.Margin = new System.Windows.Forms.Padding(2);
             this.TakeFileRadioButton.Name = "TakeFileRadioButton";
             this.TakeFileRadioButton.Size = new System.Drawing.Size(94, 17);
@@ -117,7 +117,7 @@
             // SendRadioButton
             // 
             this.SendRadioButton.AutoSize = true;
-            this.SendRadioButton.Location = new System.Drawing.Point(8, 11);
+            this.SendRadioButton.Location = new System.Drawing.Point(11, 11);
             this.SendRadioButton.Margin = new System.Windows.Forms.Padding(2);
             this.SendRadioButton.Name = "SendRadioButton";
             this.SendRadioButton.Size = new System.Drawing.Size(111, 17);
@@ -129,7 +129,7 @@
             // TakeRadioButton
             // 
             this.TakeRadioButton.AutoSize = true;
-            this.TakeRadioButton.Location = new System.Drawing.Point(7, 33);
+            this.TakeRadioButton.Location = new System.Drawing.Point(11, 32);
             this.TakeRadioButton.Margin = new System.Windows.Forms.Padding(2);
             this.TakeRadioButton.Name = "TakeRadioButton";
             this.TakeRadioButton.Size = new System.Drawing.Size(96, 17);
@@ -141,7 +141,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(9, 133);
+            this.label1.Location = new System.Drawing.Point(8, 133);
             this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(100, 13);
@@ -162,10 +162,12 @@
             // 
             // SelectedFileTextBox
             // 
+            this.SelectedFileTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.SelectedFileTextBox.Location = new System.Drawing.Point(124, 12);
             this.SelectedFileTextBox.Name = "SelectedFileTextBox";
             this.SelectedFileTextBox.ReadOnly = true;
-            this.SelectedFileTextBox.Size = new System.Drawing.Size(346, 20);
+            this.SelectedFileTextBox.Size = new System.Drawing.Size(348, 20);
             this.SelectedFileTextBox.TabIndex = 11;
             this.SelectedFileTextBox.TabStop = false;
             this.SelectedFileTextBox.Visible = false;
@@ -174,7 +176,7 @@
             // SelectFileButton
             // 
             this.SelectFileButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.SelectFileButton.Location = new System.Drawing.Point(7, 229);
+            this.SelectFileButton.Location = new System.Drawing.Point(11, 229);
             this.SelectFileButton.Margin = new System.Windows.Forms.Padding(2);
             this.SelectFileButton.Name = "SelectFileButton";
             this.SelectFileButton.Size = new System.Drawing.Size(90, 20);
@@ -187,7 +189,7 @@
             // TakeButton
             // 
             this.TakeButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.TakeButton.Location = new System.Drawing.Point(7, 253);
+            this.TakeButton.Location = new System.Drawing.Point(11, 254);
             this.TakeButton.Margin = new System.Windows.Forms.Padding(2);
             this.TakeButton.Name = "TakeButton";
             this.TakeButton.Size = new System.Drawing.Size(90, 20);
