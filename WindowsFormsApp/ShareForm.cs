@@ -39,7 +39,7 @@ namespace WindowsFormsApp
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
-            for (int i = 0; i < data.Length; i += 15)
+            for (int i = 0; i < data.Length; i += 5)
             {
                 if (worker.CancellationPending == true)
                 {
@@ -47,8 +47,8 @@ namespace WindowsFormsApp
                     break;
                 }
                 worker.ReportProgress(i * 100 / data.Length);
-                serialPort1.Write(data, i, Math.Min(15, data.Length - i));
-                Thread.Sleep(16 * 8 * ping);
+                serialPort1.Write(data, i, Math.Min(5, data.Length - i));
+                Thread.Sleep(6 * 8 * ping);
             }
             worker.ReportProgress(100);
         }
@@ -62,7 +62,7 @@ namespace WindowsFormsApp
         void SetTime(int progressPercentage)
         {
             int currentCounter = progressPercentage * data.Length / 100;
-            int seconds = (data.Length - currentCounter) * 3 / 15;
+            int seconds = (data.Length - currentCounter) * 8 * ping / 1000;
             int minutes = seconds / 60;
             int hours = minutes / 60;
             int days = hours / 24;
