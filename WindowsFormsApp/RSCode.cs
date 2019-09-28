@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace RSCode
 {
@@ -27,13 +26,16 @@ namespace RSCode
         /// </summary>
         private readonly int kk;
         /// <summary>
-        /// Порождающий многочлен
+        /// Примитивный многочлен над 2^mm
         /// </summary>
         private readonly int[] pp;
         /// <summary>
         /// Таблица степеней примитивного члена
         /// </summary>
         private readonly int[] alpha_to;
+        /// <summary>
+        /// Порождающий многочлен
+        /// </summary>
         private readonly int[] gg;
         /// <summary>
         /// Индексная таблица для быстрого умножения
@@ -43,13 +45,24 @@ namespace RSCode
         /// Полученные данные
         /// </summary>
         private int[] recd;
-        private int[] data, bb;
+        /// <summary>
+        /// Данные, которые надо закодировать
+        /// </summary>
+        private int[] data;
+        /// <summary>
+        /// Проверочные символы
+        /// </summary>
+        private int[] bb;
+        /// <summary>
+        /// Пометка о возможности декодирования
+        /// </summary>
+        public bool canDecode;
 
         public RSCoder(int t = 3)
         {
             tt = t;
             kk = nn - 2 * tt;
-            pp = new int[] { 1, 1, 0, 0, 1 };
+            pp = new int[] { 1, 1, 0, 0, 1 }; // x^4 + x + 1
             alpha_to = new int[nn + 1];
             index_of = new int[nn + 1];
             gg = new int[nn - kk + 1];
@@ -63,7 +76,7 @@ namespace RSCode
         }
 
         /// <summary>
-        ///генерируем look-up таблицу для быстрого умножения для GF(2^m) на основе
+        /// генерируем look-up таблицу для быстрого умножения для GF(2^m) на основе
         /// несократимого порождающего полинома P от pp[0] до pp[m].
         ///
         /// look-up таблица:
@@ -109,15 +122,15 @@ namespace RSCode
         }
 
         /// <summary>
-        /// Obtain the generator polynomial of the tt-error correcting, length
-        /// nn=(2**mm -1) Reed Solomon code  from the product of (X+alpha**i), i=1..2*tt
+        /// Получаем порождающий многочлен для коррекции tt ошибок, длины
+        /// nn=(2**mm -1) кода Рида-Соломона как результат (X+alpha**i), i=1..2*tt
         /// </summary>
         private void Gen_poly()
         {
             int i, j;
 
-            gg[0] = 2;    // primitive element alpha = 2  for GF(2**mm)
-            gg[1] = 1;    // g(x) = (X+alpha) initially
+            gg[0] = 2;    // примитивный элемент alpha = 2  для GF(2**mm)
+            gg[1] = 1;    // g(x) = (X+alpha) изначально
             for (i = 2; i <= nn - kk; i++)
             {
                 gg[i] = 1;
@@ -133,9 +146,9 @@ namespace RSCode
                     }
                 }
 
-                gg[0] = alpha_to[(index_of[gg[0]] + i) % nn];     // gg[0] can never be zero
+                gg[0] = alpha_to[(index_of[gg[0]] + i) % nn];     // gg[0] не может быть нулем
             }
-            // convert gg[] to index form for quicker encoding
+            // конвертируем gg[] в индексную форму для более быстрого кодирования
             for (i = 0; i <= nn - kk; i++)
             {
                 gg[i] = index_of[gg[i]];
@@ -150,7 +163,7 @@ namespace RSCode
         /// элементами массива g[] с порожденным полиномом внутри
         /// Сгенерированное кодовое слово описывается следующей формулой: с(x) = data(x)*x(n-k) + b(x)
         /// </summary>
-        private void Encode_rs()
+        public void Encode_rs()
         {
             int i, j;
             int feedback;
@@ -397,7 +410,6 @@ namespace RSCode
                 u++;
                 if (l[u] <= tt)
                 {   // коррекция ошибок возможна
-
                     // переводим elp в индексную форму
                     for (i = 0; i <= l[u]; i++)
                     {
@@ -433,7 +445,7 @@ namespace RSCode
                     }
                     if (count == l[u])
                     {   // нет корней – степень elp < t ошибок
-
+                        canDecode = true;
                         // формируем полином z(x)
                         for (i = 1; i <= l[u]; i++)
                         {   // Z[0] всегда равно 1
@@ -481,7 +493,7 @@ namespace RSCode
                         }
                         for (i = 0; i < l[u]; i++)
                         {   // сначала вычисляем числитель ошибки
-                            err[loc[i]] = 1;       // accounts for z[0]
+                            err[loc[i]] = 1;
                             for (j = 1; j <= l[u]; j++)
                             {
                                 if (z[j] != -1)
@@ -493,7 +505,7 @@ namespace RSCode
                             if (err[loc[i]] != 0)
                             {
                                 err[loc[i]] = index_of[err[loc[i]]];
-                                q = 0;      // формируем знаменателькоэффициента ошибки
+                                q = 0;      // формируем знаменатель коэффициента ошибки
                                 for (j = 0; j < l[u]; j++)
                                 {
                                     if (j != i)
@@ -510,7 +522,7 @@ namespace RSCode
                     }
                     else
                     {   // нет корней, решение системы уравнений невозможно, т.к. степень elp >= t
-
+                        canDecode = false;
                         for (i = 0; i < nn; i++)
                         {        // could return error flag if desired
                             if (recd[i] != -1)
@@ -526,7 +538,7 @@ namespace RSCode
                 }
                 else
                 {   // степень elp > t, решение невозможно
-
+                    canDecode = false;
                     for (i = 0; i < nn; i++)
                     {       // could return error flag if desired
                         if (recd[i] != -1)
@@ -542,6 +554,7 @@ namespace RSCode
             }
             else
             {   // ошибок не обнаружено
+                canDecode = true;
                 for (i = 0; i < nn; i++)
                 {
                     if (recd[i] != -1)
@@ -555,6 +568,7 @@ namespace RSCode
                 }
             }
         }
+
         /// <summary>
         /// Преобразование в блоки по m бит из байтов
         /// </summary>
@@ -578,6 +592,7 @@ namespace RSCode
             }
             return input;
         }
+
         /// <summary>
         /// Преобразование в байты из блоков по m бит
         /// </summary>
@@ -601,6 +616,12 @@ namespace RSCode
             return decoded;
         }
 
+        /// <summary>
+        /// Кодирует данные
+        /// </summary>
+        /// <param name="data">Данные для кодирования</param>
+        /// <param name="t">Количество исправляемых ошибок</param>
+        /// <returns></returns>
         public static byte[] Encode(byte[] data, int t = 3)
         {
             if (t < 1 || t > 5)
@@ -609,7 +630,7 @@ namespace RSCode
             }
 
             RSCoder coder = new RSCoder(t);
-            
+
             byte[] dataWithLen = new byte[data.Length + sizeof(int)];
             int size = data.Length;
             for (int i = 0; i < sizeof(int); ++i)
@@ -623,7 +644,7 @@ namespace RSCode
             }
 
             byte[] input = ToHex(dataWithLen, mm);
-            
+
             int blocksCnt = (int)Math.Ceiling(input.Length / (double)coder.kk);
             byte[] output = new byte[blocksCnt * coder.nn];
             for (int i = 0; i < blocksCnt; ++i)
@@ -647,17 +668,20 @@ namespace RSCode
             return ToByte(output, mm);
         }
 
+        /// <summary>
+        /// Декодирует данные
+        /// </summary>
+        /// <param name="data">Данные для декодирования</param>
+        /// <param name="t">Количество исправляемых ошибок</param>
+        /// <returns></returns>
         public static byte[] Decode(byte[] data, int t = 3)
         {
+            bool isErrors = false;
+
             if (t < 1 || t > 5)
             {
                 throw new ArgumentOutOfRangeException();
             }
-            if (data == null || data.Length == 0)
-            {
-                return data;
-            }
-
             RSCoder coder = new RSCoder(t);
 
             byte[] input = ToHex(data, mm);
@@ -672,6 +696,11 @@ namespace RSCode
                 }
                 coder.Decode_rs();
 
+                if (!coder.canDecode)
+                {
+                    isErrors = true;
+                }
+
                 for (int j = 0; j < coder.kk; ++j)
                 {
                     output[j + i * coder.kk] = (byte)(coder.recd[j + coder.nn - coder.kk]);
@@ -679,7 +708,7 @@ namespace RSCode
             }
 
             output = ToByte(output, mm);
-            
+
             int size = 0;
             for (int i = sizeof(int) - 1; i >= 0; --i)
             {
@@ -697,7 +726,15 @@ namespace RSCode
             {
                 decoded[i] = output[i + sizeof(int)];
             }
-            
+            if (isErrors)
+            {
+                data[0] = 255;
+            }
+            else
+            {
+                data[0] = 0;
+            }
+
             return decoded;
         }
     }
