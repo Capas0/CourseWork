@@ -13,20 +13,21 @@ using System.Windows.Forms;
 
 namespace WindowsFormsApp
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
         private const int ping = 25;
         private List<byte> recd = new List<byte>();
         private bool updating = false;
+        public ShareForm shareForm = null;
 
-        public Form1()
+        public MainForm()
         {
             InitializeComponent();
             PortListBox.Items.AddRange(SerialPort.GetPortNames());
-            toolTip.SetToolTip(SelectedFileTextBox, "Путь до выбранного файла");
-            toolTip.SetToolTip(SendRichTextBox, "Текст для передачи");
-            toolTip.SetToolTip(TakeRichTextBox, "Принятый текст");
-            toolTip.AutomaticDelay = 100;
+            toolTip1.SetToolTip(SelectedFileTextBox, "Путь до выбранного файла");
+            toolTip1.SetToolTip(SendRichTextBox, "Текст для передачи");
+            toolTip1.SetToolTip(TakeRichTextBox, "Принятый текст");
+            toolTip1.AutomaticDelay = 100;
         }
 
         private void SerialPort1_DataReceived(object sender, SerialDataReceivedEventArgs e)
@@ -34,7 +35,7 @@ namespace WindowsFormsApp
             recd.Add((byte)serialPort1.ReadByte());
         }
 
-        public byte[] Encrypt(byte[] data, string key)
+        private byte[] Encrypt(byte[] data, string key)
         {
             Random rnd = new Random(key.GetHashCode());
             byte[] res = new byte[data.Length];
@@ -48,7 +49,7 @@ namespace WindowsFormsApp
             return res;
         }
 
-        public byte[] Decrypt(byte[] data, string key)
+        private byte[] Decrypt(byte[] data, string key)
         {
             if (data == null)
             {
@@ -67,8 +68,13 @@ namespace WindowsFormsApp
             return res;
         }
 
-        public void Send(byte[] data)
+        private void Send(byte[] data)
         {
+            if (shareForm != null)
+            {
+                MessageBox.Show("Идет отправка другого сообщения. Попробуйте позднее.");
+                return;
+            }
             if (!serialPort1.IsOpen)
             {
                 MessageBox.Show("Выберите порт");
@@ -77,10 +83,11 @@ namespace WindowsFormsApp
             byte[] sharing = Encrypt(data, KeyTextBox.Text);
             sharing = RSCoder.Encode(sharing);
 
-            new ShareForm(serialPort1, sharing, ping).Show();
+            shareForm = new ShareForm(serialPort1, sharing, ping, this);
+            shareForm.Show();
         }
 
-        public byte[] Take()
+        private byte[] Take()
         {
             if (!serialPort1.IsOpen)
             {
@@ -94,25 +101,28 @@ namespace WindowsFormsApp
             }
 
             recd.Clear();
-            data = RSCoder.Decode(data);
+
+            if (data.Length == 0)
+            {
+                return null;
+            }
+
+            try
+            {
+                byte[] old = data;
+                data = RSCoder.Decode(data);
+                if (old[0] == 255)
+                {
+                    MessageBox.Show("При обмене данными произошли ошибки");
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Данные искажены слишком сильно для декодирования");
+                data = null;
+            }
             data = Decrypt(data, KeyTextBox.Text);
             return data;
-        }
-
-        private void SendRichTextBox_TextChanged(object sender, EventArgs e)
-        {
-            byte[] data = new byte[SendRichTextBox.Text.Length];
-            for (int i = 0; i < data.Length; i++)
-            {
-                data[i] = (byte)SendRichTextBox.Text[i];
-            }
-
-            data = Encrypt(data, KeyTextBox.Text);
-            char[] res = new char[data.Length];
-            for (int i = 0; i < data.Length; i++)
-            {
-                res[i] = (char)data[i];
-            }
         }
 
         private void SendButton_Click(object sender, EventArgs e)
@@ -298,6 +308,9 @@ namespace WindowsFormsApp
             catch (Exception exc)
             {
                 MessageBox.Show(exc.Message);
+                updating = true;
+                PortListBox.ClearSelected();
+                updating = false;
                 //listBox1.SetSelected(listBox1.SelectedIndex, false);
             }
         }

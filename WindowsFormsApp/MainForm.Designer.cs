@@ -1,6 +1,6 @@
 ﻿namespace WindowsFormsApp
 {
-    partial class Form1
+    partial class MainForm
     {
         /// <summary>
         /// Обязательная переменная конструктора.
@@ -45,7 +45,7 @@
             this.SelectFileButton = new System.Windows.Forms.Button();
             this.TakeButton = new System.Windows.Forms.Button();
             this.ClearButton = new System.Windows.Forms.Button();
-            this.toolTip = new System.Windows.Forms.ToolTip(this.components);
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.PortListBox = new System.Windows.Forms.ListBox();
             this.SuspendLayout();
             // 
@@ -65,7 +65,6 @@
             this.SendRichTextBox.TabIndex = 6;
             this.SendRichTextBox.Tag = "input";
             this.SendRichTextBox.Text = "";
-            this.SendRichTextBox.TextChanged += new System.EventHandler(this.SendRichTextBox_TextChanged);
             // 
             // TakeRichTextBox
             // 
@@ -88,7 +87,6 @@
             this.KeyTextBox.Name = "KeyTextBox";
             this.KeyTextBox.Size = new System.Drawing.Size(95, 20);
             this.KeyTextBox.TabIndex = 5;
-            this.KeyTextBox.TextChanged += new System.EventHandler(this.SendRichTextBox_TextChanged);
             // 
             // SendFileRadioButton
             // 
@@ -223,7 +221,7 @@
             this.PortListBox.SelectedIndexChanged += new System.EventHandler(this.PortListBox_SelectedIndexChanged);
             this.PortListBox.MouseEnter += new System.EventHandler(this.PortListBox_MouseEnter);
             // 
-            // Form1
+            // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -244,7 +242,7 @@
             this.Controls.Add(this.SendRichTextBox);
             this.Margin = new System.Windows.Forms.Padding(2);
             this.MinimumSize = new System.Drawing.Size(500, 323);
-            this.Name = "Form1";
+            this.Name = "MainForm";
             this.Text = "DataTransfer";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Resize += new System.EventHandler(this.Form1_Resize);
@@ -267,11 +265,11 @@
         private System.Windows.Forms.RadioButton TakeRadioButton;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button SendButton;
-        private System.Windows.Forms.TextBox SelectedFileTextBox;
-        private System.Windows.Forms.Button SelectFileButton;
         private System.Windows.Forms.Button TakeButton;
         private System.Windows.Forms.Button ClearButton;
-        private System.Windows.Forms.ToolTip toolTip;
+        private System.Windows.Forms.Button SelectFileButton;
+        private System.Windows.Forms.TextBox SelectedFileTextBox;
+        private System.Windows.Forms.ToolTip toolTip1;
         private System.Windows.Forms.ListBox PortListBox;
     }
 }
