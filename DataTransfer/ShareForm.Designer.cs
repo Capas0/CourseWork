@@ -1,4 +1,4 @@
-﻿namespace WindowsFormsApp
+﻿namespace DataTransfer
 {
     partial class ShareForm
     {
@@ -81,6 +81,7 @@
             this.Controls.Add(this.CancelSharingButton);
             this.Name = "ShareForm";
             this.Text = "Передача данных";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ShareForm_FormClosing);
             this.ResumeLayout(false);
             this.PerformLayout();
 

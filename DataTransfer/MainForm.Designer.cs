@@ -1,4 +1,4 @@
-﻿namespace WindowsFormsApp
+﻿namespace DataTransfer
 {
     partial class MainForm
     {

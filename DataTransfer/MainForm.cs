@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
-namespace WindowsFormsApp
+namespace DataTransfer
 {
     public partial class MainForm : Form
     {

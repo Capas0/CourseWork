@@ -9,19 +9,21 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
-namespace WindowsFormsApp
+namespace DataTransfer
 {
     public partial class ShareForm : Form
     {
         private readonly byte[] data;
         private readonly int ping;
+        private readonly MainForm parent;
 
-        public ShareForm(SerialPort serialPort1, byte[] data, int ping)
+        public ShareForm(SerialPort serialPort1, byte[] data, int ping, MainForm parent)
         {
             InitializeComponent();
             this.serialPort1 = serialPort1;
             this.data = data;
             this.ping = ping;
+            this.parent = parent;
             SetTime(0);
             backgroundWorker1.RunWorkerAsync();
         }
@@ -58,7 +60,7 @@ namespace WindowsFormsApp
             SetTime(e.ProgressPercentage);
         }
 
-        void SetTime(int progressPercentage)
+        private void SetTime(int progressPercentage)
         {
             int currentCounter = progressPercentage * data.Length / 100;
             int seconds = (data.Length - currentCounter) * 8 * ping / 1000;
@@ -112,6 +114,11 @@ namespace WindowsFormsApp
         private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             this.Close();
+        }
+
+        private void ShareForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            parent.shareForm = null;
         }
     }
 }
